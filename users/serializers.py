@@ -14,10 +14,7 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'id',
-            'username',
             'email',
-            'first_name',
-            'last_name',
             'full_name',
             'contact',
             'country',
@@ -30,7 +27,6 @@ class UserSerializer(serializers.ModelSerializer):
         ]
         extra_kwargs = {
             'email': {'required': True},
-            'username': {'required': True},
             'password': {'write_only': True},
             'is_verified': {'read_only': True},
         }
@@ -72,7 +68,6 @@ class LoginSerializer(serializers.Serializer):
 
 class LoginResponseSerializer(serializers.Serializer):
     message = serializers.CharField()
-    username = serializers.CharField()
     access = serializers.CharField()
     refresh = serializers.CharField()
 
@@ -138,4 +133,4 @@ class ErrorResponseSerializer(serializers.Serializer):
 class UserDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'email']
+        fields = ['id', 'full_name', 'email']

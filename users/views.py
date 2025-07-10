@@ -84,7 +84,6 @@ class LoginView(APIView):
 
         return Response({
             "message": "Login successful",
-            "username": user.username,
             "access": str(refresh.access_token),
             "refresh": str(refresh),
         }, status=status.HTTP_200_OK)
@@ -237,7 +236,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             'user': {
                 'id': user.id,
                 'email': user.email,
-                'username': user.username,
             }
         }
 
