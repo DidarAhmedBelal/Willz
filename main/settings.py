@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'api',
     'dashboard',
     'django_filters',
+    'services',
 ]
 
 EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
