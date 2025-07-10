@@ -1,11 +1,7 @@
-from rest_framework import status
+from rest_framework import status, serializers, viewsets
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
-from rest_framework.generics import (
-    CreateAPIView,
-    RetrieveUpdateAPIView,
-    GenericAPIView,
-)
+from rest_framework.generics import CreateAPIView, RetrieveUpdateAPIView, GenericAPIView
 from rest_framework.views import APIView
 from rest_framework.exceptions import ValidationError
 from django.contrib.auth import get_user_model, authenticate
@@ -14,14 +10,13 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils import timezone
 from django.core.mail import send_mail
 from django.conf import settings
-import random
 from datetime import timedelta
-from rest_framework import viewsets
+import random
+
 from rest_framework_simplejwt.tokens import RefreshToken
-from drf_yasg.utils import swagger_auto_schema
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from rest_framework import serializers
+from drf_yasg.utils import swagger_auto_schema
 
 from users.serializers import (
     UserSerializer,
@@ -38,16 +33,15 @@ from users.serializers import (
 
 User = get_user_model()
 
-
-class UserList(viewsets.ModelViewSet):
-
+# === Admin-Only: User List ===
+class UserListView(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [IsAdminUser]
 
 
+# === Signup ===
 class SignupView(CreateAPIView):
-
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [AllowAny]
@@ -60,18 +54,17 @@ class SignupView(CreateAPIView):
         }, status=status.HTTP_201_CREATED)
 
 
+# === My Profile View ===
 class MyProfileView(RetrieveUpdateAPIView):
-
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
 
     def get_object(self):
-
         return self.request.user
 
 
+# === Login ===
 class LoginView(APIView):
-
     permission_classes = [AllowAny]
 
     @swagger_auto_schema(
@@ -93,8 +86,8 @@ class LoginView(APIView):
         }, status=status.HTTP_200_OK)
 
 
+# === Send OTP ===
 class SendOTPView(GenericAPIView):
-
     serializer_class = OTPSerializer
     permission_classes = [AllowAny]
 
@@ -113,10 +106,7 @@ class SendOTPView(GenericAPIView):
         email = serializer.validated_data['email']
 
         try:
-            user = User.objects.only(
-                'id', 'email', 'otp', 'otp_created_at',
-                'otp_request_count', 'otp_request_reset_time'
-            ).get(email=email)
+            user = User.objects.get(email=email)
 
             now = timezone.now()
             if not user.otp_request_reset_time or now > user.otp_request_reset_time + timedelta(hours=1):
@@ -149,8 +139,8 @@ class SendOTPView(GenericAPIView):
             return Response({'error': 'User not found'}, status=404)
 
 
+# === Verify OTP ===
 class VerifyOTPView(GenericAPIView):
-
     serializer_class = VerifyOTPSerializer
     permission_classes = [AllowAny]
 
@@ -168,12 +158,13 @@ class VerifyOTPView(GenericAPIView):
         otp = serializer.validated_data['otp']
 
         try:
-            user = User.objects.only('id', 'email', 'otp', 'otp_created_at', 'is_verified').get(email=email, otp=otp)
+            user = User.objects.get(email=email, otp=otp)
+
             if not user.otp_created_at or timezone.now() > user.otp_created_at + timedelta(minutes=1):
                 return Response({'error': 'OTP has expired'}, status=400)
 
             user.is_verified = True
-            user.otp = '' 
+            user.otp = ''
             user.otp_created_at = None
             user.save(update_fields=['is_verified', 'otp', 'otp_created_at'])
 
@@ -183,6 +174,7 @@ class VerifyOTPView(GenericAPIView):
             return Response({'error': 'Invalid OTP or email'}, status=400)
 
 
+# === Change Password ===
 class ChangePasswordView(GenericAPIView):
     serializer_class = ChangePasswordSerializer
     permission_classes = [IsAuthenticated]
@@ -198,9 +190,9 @@ class ChangePasswordView(GenericAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
+        user = request.user
         old_password = serializer.validated_data['old_password']
         new_password = serializer.validated_data['new_password']
-        user = request.user
 
         if not user.check_password(old_password):
             return Response({'error': 'Old password is incorrect'}, status=400)
@@ -217,6 +209,7 @@ class ChangePasswordView(GenericAPIView):
         return Response({'message': 'Password changed successfully', 'full_name': full_name}, status=200)
 
 
+# === Custom JWT Token View ===
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     email = serializers.EmailField(write_only=True)
     password = serializers.CharField(write_only=True)
@@ -229,7 +222,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         password = attrs.get('password')
 
         user = authenticate(request=self.context.get('request'), username=email, password=password)
-
         if not user:
             raise serializers.ValidationError("Invalid credentials")
 
@@ -238,7 +230,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         return {
             'refresh': str(refresh),
             'access': str(refresh.access_token),
-            'user': { 
+            'user': {
                 'id': user.id,
                 'email': user.email,
                 'username': user.username,
@@ -248,4 +240,3 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
-
