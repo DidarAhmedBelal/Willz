@@ -14,9 +14,9 @@ class ServiceRequestViewSet(viewsets.ModelViewSet):
     pagination_class = ServiceRequestPagination
 
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['status']                      # Filter by status: pending, accepted, declined
-    search_fields = ['service_title', 'agency_name']   # Search by title or agency
-    ordering_fields = ['created_at', 'average_rating'] # Allow sorting
+    filterset_fields = ['status']                     
+    search_fields = ['service_title', 'agency_name']   
+    ordering_fields = ['created_at', 'average_rating'] 
     ordering = ['-created_at']
 
     def perform_create(self, serializer):

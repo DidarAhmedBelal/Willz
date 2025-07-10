@@ -17,10 +17,13 @@ from dashboard.views import (
     EarningOverviewListView,
     UserStatsDetailView
 )
+from services.views import ServiceRequestViewSet
 
 # DRF Router for Admin/UserListView
 router = DefaultRouter()
 router.register('users', UserListView, basename='user')
+router.register('services', ServiceRequestViewSet, basename='service-request')
+
 
 urlpatterns = [
     # Router-based (Admin only)
