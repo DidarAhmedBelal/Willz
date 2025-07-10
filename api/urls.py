@@ -12,6 +12,12 @@ from users.views import (
     CustomTokenObtainPairView
 )
 
+from dashboard.views import (
+    UserOverviewListView,
+    EarningOverviewListView,
+    UserStatsDetailView
+)
+
 # DRF Router for Admin/UserListView
 router = DefaultRouter()
 router.register('users', UserListView, basename='user')
@@ -25,6 +31,12 @@ urlpatterns = [
     path('login/', LoginView.as_view(), name='login'),
     path('my-profile/', MyProfileView.as_view(), name='my-profile'),
     path('change-password/', ChangePasswordView.as_view(), name='change-password'),
+
+
+    # Dashboard
+    path('stats/me/', UserStatsDetailView.as_view(), name='user-stats-detail'),
+    path('overview/users/', UserOverviewListView.as_view(), name='user-overview-list'),
+    path('overview/earnings/', EarningOverviewListView.as_view(), name='earning-overview-list'),
 
     # OTP
     path('send-otp/', SendOTPView.as_view(), name='send-otp'),

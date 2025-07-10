@@ -12,7 +12,8 @@ from django.core.mail import send_mail
 from django.conf import settings
 from datetime import timedelta
 import random
-
+from rest_framework import filters
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -33,12 +34,15 @@ from users.serializers import (
 
 User = get_user_model()
 
-# === Admin-Only: User List ===
 class UserListView(viewsets.ModelViewSet):
-    queryset = User.objects.all()
+    queryset = User.objects.all().order_by('-date_joined')  
     serializer_class = UserSerializer
     permission_classes = [IsAdminUser]
-
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['account_type'] 
+    search_fields = ['username', 'email']
+    ordering_fields = ['username', 'email', 'date_joined']
+    ordering = ['-date_joined']  
 
 # === Signup ===
 class SignupView(CreateAPIView):
